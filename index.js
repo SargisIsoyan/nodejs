@@ -1,45 +1,24 @@
-const https = require('https');
-const http = require('http');
-const url = require('url');
 const fs = require('fs');
+const {EventEmitter} = require('events');
 
-const {Readable, Writable} = require('stream');
-
-const readable = new Readable({
-    read(size) {
-        this.push("filic kardatss");
-    }
+const readable = fs.createReadStream('users.json');
+readable.on('data', (chunk) => {
+    console.log(chunk.toString());
 });
 
-function createReadStream() {
-    return new Readable({
-        read(size) {
+readable.emit('data', 'first Chunk');
+readable.emit('data', 'seee Chunk');
+readable.emit('data', 'trrr Chunk');
 
-            this.push("filic kardatss");
-        }
-    });
-}
+const customEvent = new EventEmitter();
 
-const server = http.createServer((req, res) => {
-    // console.log(req.url);
-    // for(let key in req.headers){
-    //     console.log("headers key:value  is  " + key+ ":"+req.headers[key]);
-    // }
-    res.setHeader('Content-Type', 'application/json');
-    //
-    // const urlData = url.parse(req.url, true);
-    // console.log(urlData.query.user);
-
-
-    // res.statusCode = 404;
-    // res.end(req.method);
-
-    // fs.createReadStream('./image.jpg', {highWaterMark: 2}).on('data', (chunk)=>{
-    //     res.write(chunk);
-    // });
-
-    res.end(JSON.stringify({user: "Sargis"}));
-
+customEvent.on('data', (number) => {
+    console.log('start 1', number);
+}).on('data', (number1, number2) => {
+    console.log('start 2', number1, number2);
+}).on('data2', (...arg) => {
+    console.log('start 2', arg);
 });
 
-server.listen(3000);
+customEvent.emit('data', 10, 20, 30);
+customEvent.emit('data2', 10, 20, 30);

@@ -1,13 +1,15 @@
-// 2. Գրել ծրագիր որ նախորդ առաջադրանքի կողմից ստեղծված ֆայլ կանվանափոխի
-// այդ պահի ամիս, օր, ժամ, րոպեով, վայրկյանով (Օրինակ 10_11_15_32_13.txt):
+//2.Server-ում ունենք sunny.txt ֆայլ: Ստեղծել սերվեր, որին հարցում ուղարկելիս եթե կա query-ի մեջ file դաշտը և այն հավասար է "sunny",
+// որպես response ստանա sunny.txt պարունակությունը այլապես 404 status-ով ստանա "File Not Found". (Օգտագործել Get մեթոդը):
+const http = require('http');
+const url = require('url');
 const fs = require('fs');
-const os = require('os');
 
-const userName = os.userInfo().username;
-const dateNow = new Date();
-fs.rename('./' + userName + '.json', dateNow.getHours() + '_' + dateNow.getMinutes() + '.txt', (err) => {
-    if (err) {
-        return;
+http.createServer((req, res) => {
+    const reqUrl = new URL(req.url, 'http://localhost:3000');
+    if (reqUrl.searchParams.get('file') === 'sunny'){
+        fs.createReadStream('./sunny.txt').pipe(res);
+    } else {
+        res.writeHead(404);
+        res.end('File NOt Found');
     }
-    console.log('done');
-});
+}).listen(3000);

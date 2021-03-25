@@ -1,11 +1,9 @@
-//1. Գրել ծրագիր որը կստեղծի ֆայլ Ձեր համակարգչի user անունով և այդ ֆայլում գրել համակարգչի userinfo-ն:
-const fs = require('fs');
-const os = require('os');
-const userInfo = os.userInfo();
+//1.Գրել ծրագիր, որը կստուգի , եթե req.url /sunny է, ապա console-ում տպի Yes.
+const http = require('http');
 
-fs.writeFile(userInfo.username + '.json', JSON.stringify(userInfo), (err) => {
-    if (err) {
-        return;
+http.createServer((req, res) => {
+    if (req.url === '/sunny') {
+        console.log('yes');
     }
-    console.log('done');
-});
+    res.end('test');
+}).listen(3000);
