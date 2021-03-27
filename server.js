@@ -8,4 +8,5 @@ app.use(express.json());
 
 router(app);
 
-http.createServer(app).listen(2021);
+app.listen(2021);
+// http.createServer(app).listen(2021);
