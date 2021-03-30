@@ -3,6 +3,7 @@ module.exports = (app) => {
         req.middlewareCross = 10;
         next();
     });
+    app.use('/upload', require('./routes/upload'));
     app.use('/posts', require('./routes/posts'));
     app.use('/homework', require('./routes/homework'));
     app.use('/users', require('./routes/users'));
