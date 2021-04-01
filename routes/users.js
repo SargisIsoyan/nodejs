@@ -14,39 +14,43 @@ const express = require('express');
 const router = express.Router();
 const upload = require('../middlewares/upload');
 const path = require('path');
+const {Types} = require('mongoose');
 const fs = require('fs').promises;
+const User = require('../models/users');
 
 const usersJsonPath = path.join(__homedir, './users.json');
 
 router.route('/').get(async (req, res) => {
-    let users = Object.values(JSON.parse(await fs.readFile(usersJsonPath, 'utf-8')));
+    const options = {};
+    const limit = {};
     if (req.query.name) {
-        users = users.filter(user => user.name.includes(req.query.name));
+        options.name = req.query.name;
     }
 
     if (req.query.limit) {
-        users = users.slice(0, Number(req.query.limit));
+        limit.limit = Number(req.query.limit);
     }
 
+    const users = await User.find(options, null, limit);
     res.json({
         success: true,
         data: users
     });
 }).post(upload.single('image'), async (req, res) => {
     try {
-        const users = JSON.parse(await fs.readFile(usersJsonPath, 'utf-8'));
-        if (users[req.body.username]) {
+        if (await User.exists({username: req.body.username})) {
             throw new Error('User exists');
         } else {
-            users[req.body.username] = {
-                username: req.body.username,
+            const user = new User({
                 name: req.body.name,
                 image: req.file.path
-            };
-            await fs.writeFile(usersJsonPath, JSON.stringify(users));
+            });
+            user.username = req.body.username;
+
+            await user.save();
             res.json({
                 success: true,
-                data: users[req.body.username],
+                data: user,
                 message: 'user created'
             });
         }
@@ -60,12 +64,14 @@ router.route('/').get(async (req, res) => {
     }
 });
 
-router.route('/:username').get(async (req, res) => {
-    const users = JSON.parse(await fs.readFile(usersJsonPath, 'utf-8'));
-    if (users[req.params.username]) {
+router.route('/:id').get(async (req, res) => {
+    // Types.ObjectId.isValid(req.params.id);
+    const user = await User.findOne({_id: req.params.id});
+
+    if (user) {
         res.json({
             success: true,
-            data: users[req.params.username]
+            data: user
         });
     } else {
         res.json({
@@ -76,13 +82,16 @@ router.route('/:username').get(async (req, res) => {
     }
 }).put(upload.single('image'), async (req, res) => {
     try {
-        const users = JSON.parse(await fs.readFile(usersJsonPath, 'utf-8'));
-        const user = users[req.params.username];
+        const user = await User.findById(req.params.id);
+        // await User.findOneAndUpdate({_id: req.params.id}, {
+        //     name: req.body.name,
+        //     image: req.file.path
+        // });
         if (user) {
+            await fs.unlink(path.join(__homedir, user.image));
             user.name = req.body.name;
-            await fs.unlink(path.join(__homedir, user['image']));
             user.image = req.file.path;
-            await fs.writeFile(usersJsonPath, JSON.stringify(users));
+            await user.save();
             res.json({
                 success: true,
                 data: user,
@@ -101,10 +110,10 @@ router.route('/:username').get(async (req, res) => {
     }
 }).delete(async (req, res) => {
     try {
-        const users = JSON.parse(await fs.readFile(usersJsonPath, 'utf-8'));
-        if (users[req.params.username]) {
-            delete users[req.params.username];
-            await fs.writeFile(usersJsonPath, JSON.stringify(users));
+        const user = await User.findById(req.params.id);
+        if (user) {
+            await user.remove();
+            await fs.unlink(path.join(__homedir, user.image));
             res.json({
                 success: true
             });

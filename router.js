@@ -1,5 +1,5 @@
 module.exports = (app) => {
-    app.use((req, res, next)=>{
+    app.use((req, res, next) => {
         req.middlewareCross = 10;
         next();
     });
