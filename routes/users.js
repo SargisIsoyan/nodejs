@@ -1,15 +1,3 @@
-//2. Ունենք users.json ֆայլ , այն սկզբում պարունակում է դատարկ օբյեկտ․
-// Ոնենալ users route որի վրա կարելի է կատարել get և post request :
-// post -ի body-ն պարունակելու է username, name, image դաշտերը։
-// Post անելուց հետո users.json-ի պաունակությունը կարդալ ամբողյությամբ ,
-// հետո այդ json-ի մեջ ավելացնել username key-ով օբյեկ ,
-// որի մեջ կա username, name և image (image-ը save արած image-ի path-ն է, multer-ի միջոցով save անել) , հետո
-// փոխել json-ի պարունակությունը և գրել users.json-ի մեջ։
-// Նախքան ավելացնելը ստուգել եթե այս username-ով արդեն կա օբյեկ json ֆայլի մեջ , ապա վերադարձնել res.json()-ի մեջ {success: false, data: null, message: 'username is taken'}}, հակարակ դեպքում
-// վերադարձնել success-ը true , data-ն ավելացված օբյետը , իսկ message-ը "user created" :
-// Ոնենալ դինամիկ route 'users/:username' , որի վրա կարելի է կատարել get , delete մեթոդով request :
-// get-ի դեպքում վերադարձնում է համապատասխան user-ի data-ն users.json ֆայլից ։
-// delete-ի դեպքում ջնջում է user-ի data-ն users.json ֆայլից ։
 const express = require('express');
 const router = express.Router();
 const upload = require('../middlewares/upload');
@@ -17,6 +5,8 @@ const path = require('path');
 const {Types} = require('mongoose');
 const fs = require('fs').promises;
 const User = require('../models/users');
+const UsersCtrl = require('../controllers/users.ctrl');
+const {body, validationResult} = require('express-validator');
 
 const usersJsonPath = path.join(__homedir, './users.json');
 
@@ -36,33 +26,34 @@ router.route('/').get(async (req, res) => {
         success: true,
         data: users
     });
-}).post(upload.single('image'), async (req, res) => {
-    try {
-        if (await User.exists({username: req.body.username})) {
-            throw new Error('User exists');
-        } else {
-            const user = new User({
+}).post(
+    upload.single('image'),
+    body('name').exists().bail().isLength({min: 6}),
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({errors: errors.array()});
+        }
+        try {
+            const userdata = await UsersCtrl.add({
                 name: req.body.name,
-                image: req.file.path
+                username: req.body.username,
+                file: req.file
             });
-            user.username = req.body.username;
-
-            await user.save();
             res.json({
                 success: true,
-                data: user,
-                message: 'user created'
+                data: userdata,
+                message: 'User created'
+            });
+        } catch (e) {
+            await fs.unlink(path.join(__homedir, req.file.path));
+            res.json({
+                success: false,
+                data: null,
+                message: e.message
             });
         }
-    } catch (e) {
-        await fs.unlink(path.join(__homedir, req.file.path));
-        res.json({
-            success: false,
-            data: null,
-            message: e.message
-        });
-    }
-});
+    });
 
 router.route('/:id').get(async (req, res) => {
     // Types.ObjectId.isValid(req.params.id);

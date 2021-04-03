@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "express": "^4.17.1",
+    "express-validator": "^6.10.0",
     "fs-extra": "^9.1.0",
     "mime-types": "^2.1.29",
     "mongoose": "^5.12.3",
