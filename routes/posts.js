@@ -7,6 +7,8 @@ const {ObjectId} = require('mongoose').Types;
 const ResponseManager = require('../managers/response-manager');
 const AppError = require('../managers/app-error');
 const validationResult = require('../middlewares/validation-result');
+const responseHandler = require('../middlewares/response-handler');
+const validateToken = require('../middlewares/validate-token');
 
 router.route('/').get(async (req, res) => {
     const posts = await Posts.find().populate({
@@ -15,19 +17,16 @@ router.route('/').get(async (req, res) => {
     });
     res.json(posts);
 }).post(
-    body('userId').custom((value, {req, res}) => {
-        return ObjectId.isValid(value);
-    }),
+    responseHandler,
+    validateToken,
     check('title', 'titley chka').exists(),
     validationResult,
     async (req, res) => {
-        const responseHandler = ResponseManager.getResponseHandler(res);
-
         try {
-            //call controller function
-            responseHandler.onSuccess({}, 'Post created');
+            console.log(req.decoded);
+            res.onSuccess({}, 'Post created');
         } catch (e) {
-            responseHandler.onError(e);
+            res.onError(e);
         }
     });
 

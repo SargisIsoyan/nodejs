@@ -5,8 +5,10 @@ const path = require('path');
 const {Types} = require('mongoose');
 const fs = require('fs').promises;
 const User = require('../models/users');
+const responseManager = require('../middlewares/response-handler');
+const validationResult = require('../middlewares/validation-result');
 const UsersCtrl = require('../controllers/users.ctrl');
-const {body, validationResult} = require('express-validator');
+const {body} = require('express-validator');
 
 const usersJsonPath = path.join(__homedir, './users.json');
 
@@ -29,32 +31,45 @@ router.route('/').get(async (req, res) => {
 }).post(
     upload.single('image'),
     body('name').exists().bail().isLength({min: 6}),
+    body('password').exists().bail().isLength({min: 6}).custom(value => {
+        return new RegExp("^[A-Z0-9.,/ $@()]+$").test(value);
+    }),
+    responseManager,
+    validationResult,
     async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({errors: errors.array()});
-        }
         try {
-            const userdata = await UsersCtrl.add({
+            let userdata = await UsersCtrl.add({
                 name: req.body.name,
                 username: req.body.username,
-                file: req.file
+                file: req.file,
+                password: req.body.password
             });
-            res.json({
-                success: true,
-                data: userdata,
-                message: 'User created'
-            });
+            userdata = userdata.toObject();
+            delete userdata.password;
+            res.onSuccess(userdata);
         } catch (e) {
             await fs.unlink(path.join(__homedir, req.file.path));
-            res.json({
-                success: false,
-                data: null,
-                message: e.message
-            });
+            res.onError(e);
         }
-    });
+    }
+);
+router.post('/login',
+    body('username').exists(),
+    body('password').exists(),
+    responseManager,
+    validationResult,
+    async (req, res) => {
+        try {
+            const token = await UsersCtrl.login({
+                ...req.body
+            });
+            res.onSuccess(token);
+        } catch (e) {
+            res.onError(e);
+        }
 
+    }
+);
 router.route('/:id').get(async (req, res) => {
     // Types.ObjectId.isValid(req.params.id);
     const user = await User.findOne({_id: req.params.id});
