@@ -8,22 +8,12 @@ class UsersCtrl {
         return User.findById(id);
     }
 
-    getAll() {
-
+    findOne(options){
+        return User.findOne(options);
     }
 
-    async login(data) {
-        const {username, password} = data;
-        const user = await User.findOne({username});
-        if(!user){
-            throw new AppError('Username or password is wrong', 403);
-        }
-        if(await Bcrypt.compare(password, user.password)){
-            return TokenManager.encode({
-                userId: user._id
-            });
-        }
-        throw new AppError('Username or password is wrong', 403);
+    getAll() {
+
     }
 
     async add(data) {
@@ -32,7 +22,7 @@ class UsersCtrl {
         } else {
             const user = new User({
                 name: data.name,
-                image: data.file.path,
+                image: data.file?.path,
                 password: await Bcrypt.hash(data.password)
             });
             user.username = data.username;

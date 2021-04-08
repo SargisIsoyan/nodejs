@@ -7,6 +7,7 @@ const fs = require('fs').promises;
 const User = require('../models/users');
 const responseManager = require('../middlewares/response-handler');
 const validationResult = require('../middlewares/validation-result');
+const validateToken = require('../middlewares/validate-token');
 const UsersCtrl = require('../controllers/users.ctrl');
 const {body} = require('express-validator');
 
@@ -53,17 +54,14 @@ router.route('/').get(async (req, res) => {
         }
     }
 );
-router.post('/login',
-    body('username').exists(),
-    body('password').exists(),
+
+router.post('/current',
     responseManager,
-    validationResult,
+    validateToken,
     async (req, res) => {
         try {
-            const token = await UsersCtrl.login({
-                ...req.body
-            });
-            res.onSuccess(token);
+            const user = await UsersCtrl.getById(req.decoded.userId);
+            res.onSuccess(user);
         } catch (e) {
             res.onError(e);
         }
