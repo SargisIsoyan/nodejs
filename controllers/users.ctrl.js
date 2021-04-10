@@ -21,8 +21,9 @@ class UsersCtrl {
             throw new Error('User exists');
         } else {
             const user = new User({
+                email: data.email,
                 name: data.name,
-                image: data.file?.path,
+                image: data.file ? data.file.path : undefined,
                 password: await Bcrypt.hash(data.password)
             });
             user.username = data.username;
