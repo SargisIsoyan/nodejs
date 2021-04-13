@@ -24,13 +24,13 @@ class AuthCtrl {
 
     async register(data) {
         const user = await UserCtrl.add(data);
-        const token = TokenManager.encode({
-            email: user.email,
-            action: 'register'
-        }, 3600);
-        await email(user.email, 'Node js register',
-            `<a href="http://localhost:63342/nodejs-frontend/activate.html?activation-code=${token}&_ijt=ejecqcijl13tptpech4g50mju7">Activate Profile</a>`
-        );
+        // const token = TokenManager.encode({
+        //     email: user.email,
+        //     action: 'register'
+        // }, 3600);
+        // await email(user.email, 'Node js register',
+        //     `<a href="http://localhost:63342/nodejs-frontend/activate.html?activation-code=${token}&_ijt=ejecqcijl13tptpech4g50mju7">Activate Profile</a>`
+        // );
         return user;
     };
 

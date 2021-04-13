@@ -7,8 +7,9 @@ const UserSchema = new Schema({
     name: String,
     image: String,
     password: String,
-    isActive: {type: Boolean, default: false}
+    isActive: {type: Boolean, default: true},
+    friends: [{type: Schema.Types.ObjectId, ref: 'Users'}]
 }, {versionKey: false, timestamps: true});
 UserSchema.set('collection', 'users');
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('Users', UserSchema);

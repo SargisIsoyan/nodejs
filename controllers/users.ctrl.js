@@ -1,4 +1,5 @@
 const User = require('../models/users');
+const FriendRequest = require('../models/friend-request');
 const Bcrypt = require('../managers/bcrypt');
 const AppError = require('../managers/app-error');
 const TokenManager = require('../managers/token-manager');
@@ -8,12 +9,25 @@ class UsersCtrl {
         return User.findById(id);
     }
 
-    findOne(options){
+    findOne(options) {
         return User.findOne(options);
     }
 
-    getAll() {
+    async getAll(data) {
+        const options = {
+            $and: []
+        };
+        options.$and.push({_id: {$ne: data.userId}});
+        const limit = {};
+        if (data.name) {
+            options.$and.push({name: new RegExp(data.name, 'i')});
+        }
 
+        if (data.limit) {
+            limit.limit = Number(data.limit);
+        }
+
+        return User.find(options, null, limit);
     }
 
     async add(data) {
@@ -38,6 +52,23 @@ class UsersCtrl {
 
     delete() {
 
+    }
+
+    async friendRequest(data) {
+        const {from, to} = data;
+        if (!await User.findById(to)) {
+            throw new AppError('User not found', 404);
+        }
+        if(await FriendRequest.findOne({from, to})){
+            throw new AppError('Request is sent', 403);
+        }
+        return new FriendRequest({from, to}).save();
+    }
+
+    async getFriendRequests(data) {
+        const {to} = data;
+
+        return FriendRequest.find({to});
     }
 }
 

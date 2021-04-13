@@ -5,7 +5,7 @@ const {ObjectId} = Schema.Types;
 const Posts = new Schema({
     title: String,
     desc: String,
-    author: {type: ObjectId, ref: 'User'}
+    author: {type: ObjectId, ref: 'Users'}
 }, {versionKey: false, timestamps: true});
 
 module.exports = mongoose.model('Posts', Posts);

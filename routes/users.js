@@ -13,23 +13,21 @@ const {body} = require('express-validator');
 
 const usersJsonPath = path.join(__homedir, './users.json');
 
-router.route('/').get(async (req, res) => {
-    const options = {};
-    const limit = {};
-    if (req.query.name) {
-        options.name = req.query.name;
+router.route('/').get(
+    responseManager,
+    validateToken,
+    async (req, res) => {
+        try {
+            const users = await UsersCtrl.getAll({
+                name: req.query.name,
+                userId: req.decoded.userId
+            });
+            res.onSuccess(users);
+        } catch (e) {
+            res.onError(e);
+        }
     }
-
-    if (req.query.limit) {
-        limit.limit = Number(req.query.limit);
-    }
-
-    const users = await User.find(options, null, limit);
-    res.json({
-        success: true,
-        data: users
-    });
-}).post(
+).post(
     upload.single('image'),
     body('name').exists().bail().isLength({min: 6}),
     body('password').exists().bail().isLength({min: 6}).custom(value => {
@@ -68,6 +66,38 @@ router.post('/current',
 
     }
 );
+
+router.route('/friend-request').post(
+    responseManager,
+    body('to').exists(),
+    validateToken,
+    async (req, res) => {
+        try {
+            await UsersCtrl.friendRequest({
+                from: req.decoded.userId,
+                to: req.body.to
+            });
+            res.onSuccess();
+        } catch (e) {
+            res.onError(e);
+        }
+    }
+).get(
+    responseManager,
+    validateToken,
+    async (req, res) => {
+        try {
+            res.onSuccess(
+                await UsersCtrl.getFriendRequests({
+                    to: req.decoded.userId
+                })
+            );
+        } catch (e) {
+            res.onError(e);
+        }
+    }
+);
+
 router.route('/:id').get(async (req, res) => {
     // Types.ObjectId.isValid(req.params.id);
     const user = await User.findOne({_id: req.params.id});
@@ -132,6 +162,5 @@ router.route('/:id').get(async (req, res) => {
         });
     }
 });
-
 
 module.exports = router;
