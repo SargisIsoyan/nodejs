@@ -8,7 +8,9 @@ const UserSchema = new Schema({
     image: String,
     password: String,
     isActive: {type: Boolean, default: true},
-    friends: [{type: Schema.Types.ObjectId, ref: 'Users'}]
+    friends: [{type: Schema.Types.ObjectId, ref: 'Users'}],
+    friendRequests:[{type: Schema.Types.ObjectId, ref: 'Users'}],
+    sentFriendRequests:[{type: Schema.Types.ObjectId, ref: 'Users'}],
 }, {versionKey: false, timestamps: true});
 UserSchema.set('collection', 'users');
 

@@ -56,19 +56,85 @@ class UsersCtrl {
 
     async friendRequest(data) {
         const {from, to} = data;
-        if (!await User.findById(to)) {
+        const [user, toUser] = await Promise.all([
+            User.findById(from),
+            User.findById(to)
+        ]);
+
+        if (!toUser || !user || from === to) {
             throw new AppError('User not found', 404);
         }
-        if(await FriendRequest.findOne({from, to})){
-            throw new AppError('Request is sent', 403);
+        if (user.sentFriendRequests.includes(to) ||
+            user.friends.includes(to) ||
+            user.friendRequests.includes(to)) {
+            throw new AppError('Bad request', 403);
         }
-        return new FriendRequest({from, to}).save();
+        user.sentFriendRequests.push(to);
+        toUser.friendRequests.push(from);
+
+        return Promise.all([user.save(), toUser.save()]);
     }
 
     async getFriendRequests(data) {
-        const {to} = data;
+        const {userId} = data;
+        const user = await User.findById(userId).populate('friendRequests', '_id name').lean();
 
-        return FriendRequest.find({to});
+        return user.friendRequests;
+    }
+
+    async acceptFriendRequest(data) {
+        const {userId, to} = data;
+        const [user, toUser] = await Promise.all([
+            User.findById(userId),
+            User.findById(to)
+        ]);
+
+        if (!toUser || !user) {
+            throw new AppError('User not found', 404);
+        }
+        if (user.friendRequests.includes(to) &&
+            !user.friends.includes(to)) {
+
+            user.friends.push(to);
+            toUser.friends.push(userId);
+
+            user.friendRequests.pull(to);
+            toUser.sentFriendRequests.pull(userId);
+
+            return Promise.all([user.save(), toUser.save()]);
+        }
+        throw new AppError('Bad request', 403);
+    }
+
+    async declineFriendRequest(data) {
+        const {userId, to} = data;
+        const [user, toUser] = await Promise.all([
+            User.findById(userId),
+            User.findById(to)
+        ]);
+
+        if (!toUser || !user) {
+            throw new AppError('User not found', 404);
+        }
+        if (user.friendRequests.includes(to) &&
+            !user.friends.includes(to)) {
+
+            user.friendRequests.pull(to);
+            toUser.sentFriendRequests.pull(userId);
+
+            return Promise.all([user.save(), toUser.save()]);
+        }
+        throw new AppError('Bad request', 403);
+    }
+
+    async getFriends(data) {
+        const {userId} = data;
+        const user = await User.findById(userId).populate('friends', '_id name image').lean();
+        if (!user) {
+            throw new AppError('User Not Found', 404);
+        }
+
+        return user.friends;
     }
 }
 

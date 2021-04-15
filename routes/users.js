@@ -66,6 +66,20 @@ router.post('/current',
 
     }
 );
+router.route('/friends').get(
+    responseManager,
+    validateToken,
+    async (req, res) => {
+        try {
+            const friends = await UsersCtrl.getFriends({
+                userId: req.decoded.userId
+            })
+            res.onSuccess(friends);
+        } catch (e) {
+            res.onError(e);
+        }
+    }
+);
 
 router.route('/friend-request').post(
     responseManager,
@@ -89,9 +103,39 @@ router.route('/friend-request').post(
         try {
             res.onSuccess(
                 await UsersCtrl.getFriendRequests({
-                    to: req.decoded.userId
+                    userId: req.decoded.userId
                 })
             );
+        } catch (e) {
+            res.onError(e);
+        }
+    }
+).put(
+    responseManager,
+    body('to').exists(),
+    validateToken,
+    async (req, res) => {
+        try {
+            await UsersCtrl.acceptFriendRequest({
+                userId: req.decoded.userId,
+                to: req.body.to
+            });
+            res.onSuccess();
+        } catch (e) {
+            res.onError(e);
+        }
+    }
+).delete(
+    responseManager,
+    body('to').exists(),
+    validateToken,
+    async (req, res) => {
+        try {
+            await UsersCtrl.declineFriendRequest({
+                userId: req.decoded.userId,
+                to: req.body.to
+            });
+            res.onSuccess();
         } catch (e) {
             res.onError(e);
         }
