@@ -2,6 +2,7 @@ const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
 const router = require('./router');
+const io = require('./socket');
 const cors = require('cors');
 const app = express();
 
@@ -17,7 +18,8 @@ mongoose.connect('mongodb://localhost/nodejs', {
     useFindAndModify: false,
     useCreateIndex: true
 }).then(() => {
-    app.listen(2021);
+    const server = http.createServer(app);
+    server.listen(2021);
+    io(server);
 });
 
-// http.createServer(app).listen(2021);
