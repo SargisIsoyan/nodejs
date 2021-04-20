@@ -3,6 +3,8 @@ const FriendRequest = require('../models/friend-request');
 const Bcrypt = require('../managers/bcrypt');
 const AppError = require('../managers/app-error');
 const TokenManager = require('../managers/token-manager');
+const fs = require('fs');
+const path = require('path');
 
 class UsersCtrl {
     getById(id) {
@@ -32,13 +34,15 @@ class UsersCtrl {
 
     async add(data) {
         if (await User.exists({username: data.username})) {
-            throw new Error('User exists');
+            throw new Error('USER exists');
         } else {
+            const hash = await Bcrypt.hash(data.password);
+
             const user = new User({
                 email: data.email,
                 name: data.name,
                 image: data.file ? data.file.path : undefined,
-                password: await Bcrypt.hash(data.password)
+                password: hash
             });
             user.username = data.username;
 
@@ -46,8 +50,22 @@ class UsersCtrl {
         }
     }
 
-    update() {
+    async update(data) {
+        const {userId, name, image, email} = data;
+        const user = await User.findById(userId);
 
+        if (!user) {
+            throw new AppError('User not exists', 404);
+        }
+        if (image) {
+            if (user.image) {
+                await fs.promises.unlink(path.join(__homedir, 'uploads', user.image));
+            }
+            user.image = image;
+        }
+        user.email = email;
+        user.name = name;
+        return user.save();
     }
 
     delete() {

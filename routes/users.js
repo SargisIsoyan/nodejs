@@ -3,7 +3,7 @@ const router = express.Router();
 const upload = require('../middlewares/upload');
 const path = require('path');
 const {Types} = require('mongoose');
-const fs = require('fs').promises;
+const fs = require('fs');
 const User = require('../models/users');
 const responseManager = require('../middlewares/response-handler');
 const validationResult = require('../middlewares/validation-result');
@@ -53,7 +53,7 @@ router.route('/').get(
     }
 );
 
-router.post('/current',
+router.route('/current').get(
     responseManager,
     validateToken,
     async (req, res) => {
@@ -65,7 +65,30 @@ router.post('/current',
         }
 
     }
-);
+).put(
+    responseManager,
+    validateToken,
+    body('name').exists(),
+    body('email').isEmail(),
+    async (req, res) => {
+        try {
+            const updatedData = await UsersCtrl.update({
+                name: req.body.name,
+                email: req.body.email,
+                image: req.file ? req.file.filename : undefined,
+                userId: req.decoded.userId
+            });
+            res.onSuccess(updatedData);
+        } catch (e) {
+            if (req.file && req.file.path) {
+                await fs.promises.unlink(path.join(__homedir, req.file.path));
+            }
+            res.onError(e);
+        }
+    }
+)
+
+
 router.route('/friends').get(
     responseManager,
     validateToken,

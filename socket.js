@@ -50,7 +50,6 @@ module.exports = (server) => {
                 const receiver = users.get(data.to);
                 receiver.emit('new message', message);
             }
-
         });
     });
 }
